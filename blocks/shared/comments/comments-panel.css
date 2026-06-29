@@ -141,12 +141,12 @@
 }
 
 .ew-comment-tab:hover {
-  color: var(--spectrum-blue-800);
+  color: var(--s2-blue-800);
 }
 
 .ew-comment-tab.is-active {
-  color: var(--spectrum-blue-800);
-  box-shadow: inset 0 -2px 0 var(--spectrum-blue-800);
+  color: var(--s2-blue-800);
+  box-shadow: inset 0 -2px 0 var(--s2-blue-800);
 }
 
 .ew-comment-tab-count {
@@ -175,7 +175,7 @@
 }
 
 .ew-comments-back-btn:hover {
-  color: var(--spectrum-blue-800);
+  color: var(--s2-blue-800);
 }
 
 .ew-comment-card {
@@ -342,7 +342,7 @@
   display: inline-block;
   margin-left: 40px;
   font-size: 12px;
-  color: var(--spectrum-blue-800);
+  color: var(--s2-blue-800);
   font-weight: 500;
 }
 
