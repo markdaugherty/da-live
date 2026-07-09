@@ -192,6 +192,27 @@ export function getInstrumentedHTML(view) {
     div.insertAdjacentElement('beforebegin', blockMarker);
   });
 
+  // Image instrumentation: layout mode selects images by position, but standalone
+  // images lose their <p data-prose-index> wrapper during prose2aem's makePictures,
+  // so text-block walking can't resolve them. Stamp each content image with its own
+  // PM position under a DEDICATED attribute (data-image-index) so it never pollutes
+  // the [data-prose-index] text-block queries. It rides makePictures' img.cloneNode
+  // onto the final <picture>'s inner <img>.
+  const originalImages = view.dom.querySelectorAll('img');
+  const clonedImages = editorClone.querySelectorAll('img');
+  originalImages.forEach((originalImage, index) => {
+    if (originalImage.matches('.ProseMirror-separator, .ProseMirror-trailingBreak')) return;
+    const clonedImage = clonedImages[index];
+    if (!clonedImage) return;
+    try {
+      const pos = view.posAtDOM(originalImage, 0);
+      clonedImage.setAttribute('data-image-index', pos);
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.warn('Could not find position for image:', e);
+    }
+  });
+
   const remoteCursors = editorClone.querySelectorAll('.ProseMirror-yjs-cursor');
 
   remoteCursors.forEach((remoteCursor) => {

@@ -5,6 +5,7 @@ import {
   handleCursorMove,
   handleUndoRedo,
   handleIframeSelectionChange,
+  handleNodeSelect,
 } from './utils/handlers.js';
 
 export function handleCommentShortcut() {
@@ -40,6 +41,8 @@ export function createControllerOnMessage(ctx) {
       handleUndoRedo(e.data, ctx);
     } else if (e.data.type === 'selection-change') {
       handleIframeSelectionChange(e.data, ctx);
+    } else if (e.data.type === 'node-select') {
+      handleNodeSelect(e.data, ctx);
     } else if (e.data.type === 'comment-marker-click') {
       handleCommentMarkerClick(e.data);
     } else if (e.data.type === 'comment-marker-clear') {
