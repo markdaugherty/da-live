@@ -45,14 +45,15 @@
   --ew-comment-border-style: dashed;
 }
 
-/* Per-author color, toned down for readability. Pending keeps its own theme. */
+/* Per-author strong (weight 700) color at 20% opacity, per Spectrum spec. Pending
+   keeps its own theme. */
 .ew-comment-highlight.ew-comment-authored:not(.ew-comment-highlight-pending) {
-  --ew-comment-bg: color-mix(in srgb, var(--ew-comment-author-color) 22%, transparent);
+  --ew-comment-bg: color-mix(in srgb, var(--ew-comment-author-color) 20%, transparent);
   --ew-comment-border-color: var(--ew-comment-author-color);
 }
 
 .ew-comment-highlight.ew-comment-authored.ew-comment-highlight-active {
-  --ew-comment-bg: color-mix(in srgb, var(--ew-comment-author-color) 40%, transparent);
+  --ew-comment-bg: color-mix(in srgb, var(--ew-comment-author-color) 35%, transparent);
 }
 
 .ProseMirror .ew-comment-highlight tr:first-child td,

@@ -38,20 +38,27 @@
   font-size: 10px;
   font-weight: 600;
   line-height: 1;
-  box-shadow: 0 1px 3px rgb(0 0 0 / 22%);
+
+  /* Spectrum "emphasized" elevation, matching the canvas bubbles. */
+  filter:
+    drop-shadow(0 2px 8px rgb(0 0 0 / 8%))
+    drop-shadow(0 1px 4px rgb(0 0 0 / 4%))
+    drop-shadow(0 0 1px rgb(0 0 0 / 8%));
   cursor: pointer;
   pointer-events: auto;
   transform: translateY(-2px);
 }
 
 .ew-editor-doc .ew-comment-gutter-bubble.is-active {
-  box-shadow:
-    0 0 0 2px var(--ew-comment-author-color, #6b7280),
-    0 1px 3px rgb(0 0 0 / 22%);
+  outline: 2px solid var(--ew-comment-author-color, #6b7280);
+  outline-offset: 1px;
 }
 
 .ew-editor-doc .ew-comment-gutter-bubble:hover {
-  filter: brightness(0.95);
+  filter:
+    drop-shadow(0 4px 12px rgb(0 0 0 / 8%))
+    drop-shadow(0 2px 6px rgb(0 0 0 / 4%))
+    drop-shadow(0 0 2px rgb(0 0 0 / 12%));
 }
 
 .ew-editor-doc .ew-editor-doc-mount {
@@ -251,7 +258,7 @@
   border-radius: 2px;
   padding: 0 3px;
   white-space: nowrap;
-  color: white;
+  color: var(--s2-gray-800);
 }
 
 .ew-editor-doc-placeholder {

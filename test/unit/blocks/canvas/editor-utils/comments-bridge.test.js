@@ -40,12 +40,20 @@ describe('comments-bridge', () => {
     expect(getCommentsVisible()).to.be.true;
   });
 
-  it('toggleComments turns highlights on when nothing is visible', () => {
+  it('toggleComments opens the comments panel when nothing is visible', () => {
+    const header = document.createElement('ew-canvas-header');
+    document.body.appendChild(header);
+    let opened = null;
+    header.addEventListener('nx-canvas-open-panel', (e) => { opened = e.detail; });
+
     const controller = stubController();
     setCommentsController(controller);
     toggleComments();
-    expect(controller.showHighlights).to.be.true;
+
+    expect(opened).to.deep.equal({ position: 'after', panelName: 'comments' });
+    expect(controller.showHighlights).to.be.false;
     expect(controller.closedCount).to.equal(0);
+    header.remove();
   });
 
   it('toggleComments hides everything (closes panel + clears highlights) when visible', () => {

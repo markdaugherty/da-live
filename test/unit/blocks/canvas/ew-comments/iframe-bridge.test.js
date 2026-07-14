@@ -92,19 +92,34 @@ describe('iframe-bridge', () => {
     };
     const markers = commentMarkers(editor.view, controller);
     expect(markers[0].color).to.equal('#123456');
+    expect(markers[0].textColor).to.be.a('string').with.length.greaterThan(0);
+    expect(markers[0].highlightColor).to.be.a('string').with.length.greaterThan(0);
     expect(markers[0].initials).to.equal('AL');
     expect(markers[0].authorName).to.equal('Ada Lovelace');
     destroyEditor(editor);
   });
 
-  it('authorPresentation derives a deterministic color and initials', () => {
+  it('authorPresentation derives a deterministic color set and initials', () => {
     const present = authorPresentation({ name: 'Grace Hopper', email: 'grace@x.com' });
     expect(present.initials).to.equal('GH');
     expect(present.color).to.be.a('string').with.length.greaterThan(0);
-    // Deterministic: same identity -> same color.
-    expect(authorPresentation({ name: 'Grace Hopper', email: 'grace@x.com' }).color)
-      .to.equal(present.color);
+    expect(present.textColor).to.be.a('string').with.length.greaterThan(0);
+    expect(present.highlightColor).to.be.a('string').with.length.greaterThan(0);
+    // bg / text / strong are distinct weights of the same hue.
+    expect(present.color).to.not.equal(present.highlightColor);
+    // Deterministic: same identity -> same set.
+    const again = authorPresentation({ name: 'Grace Hopper', email: 'grace@x.com' });
+    expect(again.color).to.equal(present.color);
+    expect(again.textColor).to.equal(present.textColor);
+    expect(again.highlightColor).to.equal(present.highlightColor);
     expect(authorPresentation(undefined).initials).to.equal('?');
+  });
+
+  it('a stored author.color wins for the bubble while text/highlight stay derived', () => {
+    const present = authorPresentation({ name: 'Ada', email: 'ada@x.com', color: '#123456' });
+    expect(present.color).to.equal('#123456');
+    expect(present.textColor).to.be.a('string').with.length.greaterThan(0);
+    expect(present.highlightColor).to.be.a('string').with.length.greaterThan(0);
   });
 
   it('postCommentMarkers posts markers and selectedThreadId', () => {

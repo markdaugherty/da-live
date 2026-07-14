@@ -1,14 +1,24 @@
 import { decodeAnchor } from '../../shared/comments/helpers/anchor.js';
 import { getInitials } from '../../shared/comments/helpers/format-utils.js';
-import { generateColor } from '../ew-editor-doc/utils/collab.js';
+import { generateColorSet, colorSetForColor } from '../../shared/author-color.js';
 
-// The thread's root author drives the highlight color + initials bubble, mirroring
-// the panel's thread cards. Falls back to a deterministic color when a legacy
-// comment predates author.color.
+// The thread's root author drives the bubble + highlight, mirroring the panel's
+// thread cards. `color` is the author's identity color (avatar/bubble background,
+// weight 400) — honouring a stored author.color when present — while `textColor`
+// keeps initials legible on it and `highlightColor` (weight 700) tints the range.
+// We resolve the set from the stored color first so text/strong stay on the SAME
+// hue as the cursor/avatar (which use author.color), then fall back to email/id.
 export function authorPresentation(author) {
   const user = author ?? {};
-  const color = user.color ?? generateColor(user.email || user.id || '');
-  return { color, initials: getInitials(user.name), authorName: user.name ?? '' };
+  const set = (user.color && colorSetForColor(user.color))
+    || generateColorSet(user.email || user.id || '');
+  return {
+    color: user.color ?? set.bg,
+    textColor: set.text,
+    highlightColor: set.strong,
+    initials: getInitials(user.name),
+    authorName: user.name ?? '',
+  };
 }
 
 function imageSrcAtAnchor(view, from) {
@@ -35,16 +45,18 @@ export function commentMarkers(view, controller) {
     if (!comment) return;
     const range = decodeAnchor({ anchor: comment, state: view.state });
     if (!range) return;
-    const { color, initials, authorName } = authorPresentation(comment.author);
+    const present = authorPresentation(comment.author);
     const marker = {
       threadId,
       anchorType: comment.anchorType,
       from: range.from,
       to: range.to,
       anchorText: comment.anchorText ?? '',
-      color,
-      initials,
-      authorName,
+      color: present.color,
+      textColor: present.textColor,
+      highlightColor: present.highlightColor,
+      initials: present.initials,
+      authorName: present.authorName,
     };
     if (comment.anchorType === 'image') {
       marker.imageSrc = imageSrcAtAnchor(view, range.from);

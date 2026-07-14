@@ -3,7 +3,7 @@
 import { html, nothing, ref } from 'da-lit';
 import * as formatUtils from './format-utils.js';
 import { DRAFT_MODES } from './draft-state.js';
-import { generateColor } from '../../../canvas/ew-editor-doc/utils/collab.js';
+import { generateColor, generateColorSet, colorSetForColor } from '../../author-color.js';
 
 const IS_MAC = /Mac|iPhone|iPad/.test(navigator.userAgent);
 export const COMMENT_SHORTCUT = IS_MAC ? '⌘ + Option + M' : 'Ctrl + Alt + M';
@@ -16,8 +16,11 @@ export function renderAvatar(panel, author) {
     color = generateColor(key);
     panel._avatarColorCache.set(key, color);
   }
+  // Dark tonal initials keep contrast on the light (weight 400) background, resolved
+  // from the same hue as the background color.
+  const textColor = (colorSetForColor(color) ?? generateColorSet(key)).text;
   return html`
-    <div class="ew-comment-avatar" style="background-color: ${color}">
+    <div class="ew-comment-avatar" style="background-color: ${color}; color: ${textColor}">
       ${formatUtils.getInitials(author.name)}
     </div>
   `;

@@ -48,7 +48,7 @@ export function createCommentGutter({ getView, getContainer, controller }) {
       } catch {
         return;
       }
-      const { color, initials } = authorPresentation(comment.author);
+      const { color, textColor, initials } = authorPresentation(comment.author);
       const bubble = document.createElement('button');
       bubble.type = 'button';
       const active = id === controller.selectedThreadId;
@@ -56,6 +56,7 @@ export function createCommentGutter({ getView, getContainer, controller }) {
       bubble.textContent = initials;
       bubble.dataset.commentThread = id;
       bubble.style.setProperty('--ew-comment-author-color', color);
+      if (textColor) bubble.style.color = textColor;
       bubble.style.top = `${(coords.top - base.top) + container.scrollTop}px`;
       bubble.addEventListener('click', (e) => {
         e.preventDefault();

@@ -39,7 +39,8 @@ import sectionPasteHandler from '../../edit/prose/plugins/sectionPasteHandler.js
 import base64Uploader from './prose-plugins/base64Uploader.js';
 import { getNx } from '../../../scripts/utils.js';
 import { getAuthToken } from '../../shared/utils.js';
-import { generateColor, getCollabIdentity } from './utils/collab.js';
+import { generateColor, collabCursorBuilder } from '../../shared/author-color.js';
+import { getCollabIdentity } from './utils/collab.js';
 
 const { DA_ADMIN, DA_COLLAB } = await import(`${getNx()}/utils/utils.js`);
 
@@ -156,7 +157,7 @@ export default async function initProse({
    * handleTableBackspace (fixes list Enter + table NodeSelection + Backspace). */
   const plugins = [
     ySyncPlugin(yXmlFragment),
-    yCursorPlugin(wsProvider.awareness),
+    yCursorPlugin(wsProvider.awareness, { cursorBuilder: collabCursorBuilder }),
     yUndoPlugin(),
     tableSelectHandle(),
     imageDrop(schema, () => path),

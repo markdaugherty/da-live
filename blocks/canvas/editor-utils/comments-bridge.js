@@ -41,18 +41,17 @@ export function getCommentsVisible() {
   return Boolean(controller && (controller.panelOpen || controller.showHighlights));
 }
 
-// Master on/off switch: turning comments off hides everything (closes the rail
-// and clears inline highlights); turning them on shows inline highlights.
+// The header button is a shortcut to the comments panel: toggling on opens the
+// rail (which shows highlights via panelOpen), toggling off closes it. Highlights
+// then track panel visibility, so closing via the rail's own control is consistent.
 export function toggleComments() {
   const { controller } = bridge;
-  if (!controller?.setShowHighlights) return;
+  if (!controller) return;
   if (controller.panelOpen || controller.showHighlights) {
-    if (controller.panelOpen) {
-      controller.closePanel();
-      closeCommentsPanel();
-    }
-    controller.setShowHighlights(false);
+    if (controller.panelOpen) controller.closePanel();
+    closeCommentsPanel();
+    controller.setShowHighlights?.(false);
   } else {
-    controller.setShowHighlights(true);
+    openCommentsPanel();
   }
 }

@@ -6,7 +6,7 @@ import {
   ySyncPluginKey,
 } from 'da-y-wrapper';
 import { decodeAnchor } from './helpers/anchor.js';
-import { generateColor } from '../../canvas/ew-editor-doc/utils/collab.js';
+import { generateColorSet, colorSetForColor } from '../author-color.js';
 
 export const commentPluginKey = new PluginKey('comments');
 
@@ -25,11 +25,14 @@ const emptyState = () => ({
   needsResync: false,
 });
 
-// Deterministic per-author color, matching the panel avatar (renderAvatar):
-// prefer the stored author.color, else derive from email/id.
+// Inline highlights use the author's strong (weight 700) color — resolved from the
+// stored identity color so it stays on the same hue as the cursor/avatar, falling
+// back to email/id. The toned-down fill/border is applied in CSS.
 function authorColor(author) {
   const user = author ?? {};
-  return user.color ?? generateColor(user.email || user.id || '');
+  const set = (user.color && colorSetForColor(user.color))
+    || generateColorSet(user.email || user.id || '');
+  return set.strong;
 }
 
 // Highlights render whenever the panel is open OR the EW visibility toggle is on.
