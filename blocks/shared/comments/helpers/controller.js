@@ -26,6 +26,7 @@ import {
   SET_SELECTED_THREAD,
   SET_PANEL_OPEN,
   SET_PENDING_ANCHOR,
+  SET_SHOW_HIGHLIGHTS,
   commentPluginKey,
 } from '../comment-plugin.js';
 import { decodeAnchor, encodeAnchor, getSelectionData } from './anchor.js';
@@ -68,6 +69,10 @@ export function createCommentsController({ commentsStore: store, wsProvider }) {
 
     get panelOpen() {
       return Boolean(getPluginState()?.panelOpen);
+    },
+
+    get showHighlights() {
+      return Boolean(getPluginState()?.showHighlights);
     },
 
     get selectedThreadId() {
@@ -217,8 +222,10 @@ export function createCommentsController({ commentsStore: store, wsProvider }) {
       const prevPanel = prev?.panelOpen ?? false;
       const prevThread = prev?.selectedThreadId ?? null;
       const prevAnchor = prev?.pendingAnchor ?? null;
+      const prevShow = prev?.showHighlights ?? false;
 
       if (prevPanel !== next.panelOpen) emit('panelOpen');
+      if (prevShow !== next.showHighlights) emit('showHighlights');
       if (prevThread !== next.selectedThreadId) emit('selectedThreadId');
       if (prevAnchor !== next.pendingAnchor) emit('pendingAnchor');
     },
@@ -232,6 +239,13 @@ export function createCommentsController({ commentsStore: store, wsProvider }) {
       const ps = getPluginState();
       if (ps && ps.panelOpen === next) return;
       dispatchPluginMeta({ type: SET_PANEL_OPEN, payload: next });
+    },
+
+    setShowHighlights(show) {
+      const next = Boolean(show);
+      const ps = getPluginState();
+      if (ps && ps.showHighlights === next) return;
+      dispatchPluginMeta({ type: SET_SHOW_HIGHLIGHTS, payload: next });
     },
 
     setSelectedThread(id) {

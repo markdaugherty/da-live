@@ -93,7 +93,15 @@ da-comments {
 
 .da-editor-tab.show-comments {
   position: relative;
-  background: url("/blocks/edit/img/S2_icon_Comment_20_N.svg") center center / 20px no-repeat;
+  background-color: transparent;
+}
+
+.da-editor-tab.show-comments::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-color: #646464;
+  mask: url("/blocks/shared/comments/img/S2_Icon_Chat_20_N.svg") center center / 20px no-repeat;
 }
 
 .da-comment-badge {

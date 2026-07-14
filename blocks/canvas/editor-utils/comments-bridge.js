@@ -25,3 +25,34 @@ export function openCommentsPanel() {
     detail: { position: 'after', panelName: 'comments' },
   }));
 }
+
+// Close the right rail hosting the comments panel. panelOpen is derived from the
+// panel's on-screen visibility (see bindPanelOpenToVisibility), so hiding the
+// rail is what actually turns it off — the same nx-panel-close the panel's own
+// close control fires.
+export function closeCommentsPanel() {
+  const aside = document.querySelector('aside.panel[data-position="after"]');
+  aside?.dispatchEvent(new CustomEvent('nx-panel-close', { bubbles: true, composed: true }));
+}
+
+// Comments are "visible" when the panel is open OR inline highlights are on.
+export function getCommentsVisible() {
+  const { controller } = bridge;
+  return Boolean(controller && (controller.panelOpen || controller.showHighlights));
+}
+
+// Master on/off switch: turning comments off hides everything (closes the rail
+// and clears inline highlights); turning them on shows inline highlights.
+export function toggleComments() {
+  const { controller } = bridge;
+  if (!controller?.setShowHighlights) return;
+  if (controller.panelOpen || controller.showHighlights) {
+    if (controller.panelOpen) {
+      controller.closePanel();
+      closeCommentsPanel();
+    }
+    controller.setShowHighlights(false);
+  } else {
+    controller.setShowHighlights(true);
+  }
+}

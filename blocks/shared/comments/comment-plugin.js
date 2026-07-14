@@ -6,6 +6,7 @@ import {
   ySyncPluginKey,
 } from 'da-y-wrapper';
 import { decodeAnchor } from './helpers/anchor.js';
+import { generateColor } from '../../canvas/ew-editor-doc/utils/collab.js';
 
 export const commentPluginKey = new PluginKey('comments');
 
@@ -13,14 +14,28 @@ export const SET_RANGES = 'setRanges';
 export const SET_SELECTED_THREAD = 'setSelectedThread';
 export const SET_PANEL_OPEN = 'setPanelOpen';
 export const SET_PENDING_ANCHOR = 'setPendingAnchor';
+export const SET_SHOW_HIGHLIGHTS = 'setShowHighlights';
 
 const emptyState = () => ({
   ranges: new Map(),
   selectedThreadId: null,
   panelOpen: false,
+  showHighlights: false,
   pendingAnchor: null,
   needsResync: false,
 });
+
+// Deterministic per-author color, matching the panel avatar (renderAvatar):
+// prefer the stored author.color, else derive from email/id.
+function authorColor(author) {
+  const user = author ?? {};
+  return user.color ?? generateColor(user.email || user.id || '');
+}
+
+// Highlights render whenever the panel is open OR the EW visibility toggle is on.
+const isVisible = (pluginState) => Boolean(
+  pluginState?.panelOpen || pluginState?.showHighlights,
+);
 
 function applyAction(prev, action) {
   switch (action.type) {
@@ -36,6 +51,11 @@ function applyAction(prev, action) {
       const next = Boolean(action.payload);
       if (prev.panelOpen === next) return prev;
       return { ...prev, panelOpen: next };
+    }
+    case SET_SHOW_HIGHLIGHTS: {
+      const next = Boolean(action.payload);
+      if (prev.showHighlights === next) return prev;
+      return { ...prev, showHighlights: next };
     }
     case SET_PENDING_ANCHOR: {
       const next = action.payload ?? null;
@@ -89,7 +109,13 @@ function computeRanges(store, state) {
     if (comment.threadId != null) return;
     if (comment.resolved) return;
     const range = decodeAnchor({ anchor: comment, state });
-    if (range) out.set(id, { ...range, anchorType: comment.anchorType });
+    if (range) {
+      out.set(id, {
+        ...range,
+        anchorType: comment.anchorType,
+        color: authorColor(comment.author),
+      });
+    }
   });
   return out;
 }
@@ -104,9 +130,9 @@ export default function commentPlugin({ controller, store }) {
         const meta = tr.getMeta(commentPluginKey);
         let next = meta ? applyPluginMeta(prev, meta) : prev;
 
-        if (!prev.panelOpen && next.panelOpen) {
+        if (!isVisible(prev) && isVisible(next)) {
           next = { ...next, ranges: computeRanges(store, newState), needsResync: false };
-        } else if (tr.docChanged && next.panelOpen) {
+        } else if (tr.docChanged && isVisible(next)) {
           const yMeta = ySyncPluginKey.getState(newState);
           const mustRebuild = yMeta?.isUndoRedoOperation || yMeta?.isChangeOrigin;
           if (mustRebuild) {
@@ -125,7 +151,7 @@ export default function commentPlugin({ controller, store }) {
 
       const onStoreChange = () => {
         if (editorView.isDestroyed) return;
-        if (!commentPluginKey.getState(editorView.state)?.panelOpen) return;
+        if (!isVisible(commentPluginKey.getState(editorView.state))) return;
         const ranges = computeRanges(store, editorView.state);
         editorView.dispatch(
           editorView.state.tr.setMeta(commentPluginKey, { type: SET_RANGES, payload: ranges }),
@@ -146,11 +172,11 @@ export default function commentPlugin({ controller, store }) {
             controller.notifyDocChange();
           }
 
-          if (next.needsResync && next.panelOpen) {
+          if (next.needsResync && isVisible(next)) {
             queueMicrotask(() => {
               if (view.isDestroyed) return;
               const state = commentPluginKey.getState(view.state);
-              if (!state.needsResync || !state.panelOpen) return;
+              if (!state.needsResync || !isVisible(state)) return;
               const ranges = computeRanges(store, view.state);
               view.dispatch(
                 view.state.tr.setMeta(commentPluginKey, { type: SET_RANGES, payload: ranges }),
@@ -168,19 +194,25 @@ export default function commentPlugin({ controller, store }) {
     props: {
       decorations(state) {
         const pluginState = commentPluginKey.getState(state);
-        if (!pluginState.panelOpen) return DecorationSet.empty;
+        if (!isVisible(pluginState)) return DecorationSet.empty;
 
         const decorations = [];
-        pluginState.ranges.forEach(({ from, to, anchorType }, threadId) => {
+        pluginState.ranges.forEach(({ from, to, anchorType, color }, threadId) => {
           const isSelected = threadId === pluginState.selectedThreadId;
-          const cls = isSelected
+          let cls = isSelected
             ? 'ew-comment-highlight ew-comment-highlight-active'
             : 'ew-comment-highlight';
+          const spec = { 'data-comment-thread': threadId };
+          if (color) {
+            cls += ' ew-comment-authored';
+            spec.style = `--ew-comment-author-color: ${color}`;
+          }
+          spec.class = cls;
           pushAnchorDecoration(decorations, {
             from,
             to,
             anchorType,
-            spec: { class: cls, 'data-comment-thread': threadId },
+            spec,
           });
         });
 
@@ -201,7 +233,7 @@ export default function commentPlugin({ controller, store }) {
       handleDOMEvents: {
         click(view, event) {
           const pluginState = commentPluginKey.getState(view.state);
-          if (!pluginState.panelOpen) return false;
+          if (!isVisible(pluginState)) return false;
           const target = event.target?.closest?.('[data-comment-thread]');
           if (target) {
             controller.setSelectedThread(target.getAttribute('data-comment-thread'));

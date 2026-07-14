@@ -6,6 +6,52 @@
   height: 100%;
   min-height: 0;
   overflow: hidden auto;
+  position: relative;
+}
+
+/* EXPERIMENTAL: right-margin gutter of comment initials bubbles (comment-gutter.js). */
+.ew-editor-doc .ew-comment-gutter {
+  position: absolute;
+  top: 0;
+  right: 8px;
+  width: 0;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.ew-editor-doc .ew-comment-gutter-bubble {
+  position: absolute;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  margin: 0;
+  border: 1.5px solid light-dark(#fff, var(--s2-gray-75, #2c2c2c));
+  border-radius: 50%;
+  background: var(--ew-comment-author-color, #6b7280);
+  color: #fff;
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 22%);
+  cursor: pointer;
+  pointer-events: auto;
+  transform: translateY(-2px);
+}
+
+.ew-editor-doc .ew-comment-gutter-bubble.is-active {
+  box-shadow:
+    0 0 0 2px var(--ew-comment-author-color, #6b7280),
+    0 1px 3px rgb(0 0 0 / 22%);
+}
+
+.ew-editor-doc .ew-comment-gutter-bubble:hover {
+  filter: brightness(0.95);
 }
 
 .ew-editor-doc .ew-editor-doc-mount {

@@ -29,8 +29,9 @@ import { createExtensionsBridgePlugin } from '../editor-utils/extensions-bridge.
 import { createCommentsStore } from '../../shared/comments/helpers/comments-store.js';
 import { createCommentsController } from '../../shared/comments/helpers/controller.js';
 import commentPlugin from '../../shared/comments/comment-plugin.js';
-import { setCommentsController } from '../editor-utils/comments-bridge.js';
+import { setCommentsController, openCommentsPanel } from '../editor-utils/comments-bridge.js';
 import { commentMarkers, postCommentMarkers, postScrollToComment } from '../ew-comments/iframe-bridge.js';
+import { createCommentGutter } from './utils/comment-gutter.js';
 import getSheet from '../../shared/sheet.js';
 
 const { loadStyle } = await import(`${getNx()}/utils/utils.js`);
@@ -53,22 +54,33 @@ export function publishCommentsController(store, wsProvider) {
 export function subscribeCommentIframeBridge({ controller, getView, getPort }) {
   if (!controller?.subscribe) return () => {};
 
+  const visible = () => controller.panelOpen || controller.showHighlights;
+
   const syncLayoutMarkers = () => {
     const port = getPort();
     const view = getView();
     if (!port || !view) return;
-    const markers = controller.panelOpen ? commentMarkers(view, controller) : [];
+    const markers = visible() ? commentMarkers(view, controller) : [];
     postCommentMarkers(port, markers, controller);
   };
 
   return controller.subscribe(({ reason }) => {
+    // Selecting a thread while the panel is closed (e.g. clicking a highlight
+    // with the visibility toggle on) opens the panel. Handled before the port
+    // guard so it also works in the doc-only view, which has no layout port.
+    if (reason === 'selectedThreadId'
+      && controller.selectedThreadId
+      && !controller.panelOpen) {
+      openCommentsPanel();
+    }
     const port = getPort();
     const view = getView();
     if (!port || !view) return;
     if (reason === 'selectedThreadId') {
-      if (controller.panelOpen) postScrollToComment(port, view, controller);
+      if (visible()) postScrollToComment(port, view, controller);
       syncLayoutMarkers();
-    } else if (reason === 'counts' || reason === 'docChange' || reason === 'init' || reason === 'panelOpen') {
+    } else if (reason === 'counts' || reason === 'docChange' || reason === 'init'
+      || reason === 'panelOpen' || reason === 'showHighlights') {
       syncLayoutMarkers();
     }
   });
@@ -242,6 +254,8 @@ export class EwEditorDoc extends LitElement {
       onCollabUsersCleared: () => this._emitCollabUsers([]),
     });
     this._awarenessOff = undefined;
+    this._commentGutterOff?.();
+    this._commentGutterOff = null;
     this._unsubCommentBridge?.();
     this._unsubCommentBridge = null;
     this._commentsController?.destroy();
@@ -341,6 +355,7 @@ export class EwEditorDoc extends LitElement {
       this._setupAwareness(wsProvider);
       this._observeUndoManager(undoManager);
       this._emitHtmlChange();
+      this._setupCommentGutter();
 
       this._setupController();
     } catch (e) {
@@ -381,6 +396,19 @@ export class EwEditorDoc extends LitElement {
 
   _applyHighlight(detail) {
     applyHighlight(this._proseContext?.view, detail);
+  }
+
+  // EXPERIMENTAL: doc-mode right-margin initials bubbles (see comment-gutter.js).
+  _setupCommentGutter() {
+    this._commentGutterOff?.();
+    if (!this._commentsController) return;
+    afterNextPaint(() => {
+      this._commentGutterOff = createCommentGutter({
+        controller: this._commentsController,
+        getView: () => this._proseContext?.view,
+        getContainer: () => this.shadowRoot?.querySelector('.ew-editor-doc'),
+      });
+    });
   }
 
   disconnectedCallback() {

@@ -5,6 +5,7 @@ import {
   commentMarkers,
   postCommentMarkers,
   postScrollToComment,
+  authorPresentation,
 } from '../../../../../blocks/canvas/ew-comments/iframe-bridge.js';
 
 /**
@@ -79,6 +80,31 @@ describe('iframe-bridge', () => {
     expect(markers[0].anchorType).to.equal('image');
     expect(markers[0].imageSrc).to.include('media/x.png');
     destroyEditor(editor);
+  });
+
+  it('commentMarkers carries author color, initials and name', async () => {
+    const { editor, comment } = await setup();
+    const authored = { ...comment, author: { name: 'Ada Lovelace', email: 'ada@x.com', color: '#123456' } };
+    const controller = {
+      selectedThreadId: 't1',
+      getAttachedThreadIds: () => new Set(['t1']),
+      getComment: () => authored,
+    };
+    const markers = commentMarkers(editor.view, controller);
+    expect(markers[0].color).to.equal('#123456');
+    expect(markers[0].initials).to.equal('AL');
+    expect(markers[0].authorName).to.equal('Ada Lovelace');
+    destroyEditor(editor);
+  });
+
+  it('authorPresentation derives a deterministic color and initials', () => {
+    const present = authorPresentation({ name: 'Grace Hopper', email: 'grace@x.com' });
+    expect(present.initials).to.equal('GH');
+    expect(present.color).to.be.a('string').with.length.greaterThan(0);
+    // Deterministic: same identity -> same color.
+    expect(authorPresentation({ name: 'Grace Hopper', email: 'grace@x.com' }).color)
+      .to.equal(present.color);
+    expect(authorPresentation(undefined).initials).to.equal('?');
   });
 
   it('postCommentMarkers posts markers and selectedThreadId', () => {

@@ -44,7 +44,42 @@ describe('commentPlugin', () => {
     expect(state.ranges.size).to.equal(0);
     expect(state.selectedThreadId).to.be.null;
     expect(state.panelOpen).to.be.false;
+    expect(state.showHighlights).to.be.false;
     expect(state.pendingAnchor).to.be.null;
+  });
+
+  it('renders author-colored highlights via showHighlights without opening the panel', async () => {
+    const { store } = await setup();
+    editor.view.dispatch(editor.view.state.tr.insertText('hello world'));
+    const encoded = encodeAnchor({
+      selectionData: { from: 1, to: 6, anchorType: 'text', anchorText: 'hello' },
+      state: editor.view.state,
+    });
+    store.set('t1', {
+      id: 't1',
+      threadId: null,
+      ...encoded,
+      author: { id: 'u', email: 'u@example.com' },
+      body: '',
+      createdAt: 0,
+      resolved: false,
+      reactions: {},
+    });
+
+    expect(commentPluginKey.getState(editor.view.state).panelOpen).to.be.false;
+    expect(editor.view.dom.querySelector('[data-comment-thread="t1"]')).to.be.null;
+
+    controller.setShowHighlights(true);
+    await new Promise((resolve) => { setTimeout(resolve, 0); });
+
+    const deco = editor.view.dom.querySelector('[data-comment-thread="t1"]');
+    expect(deco, 'highlight visible with showHighlights only').to.not.be.null;
+    expect(deco.classList.contains('ew-comment-authored')).to.equal(true);
+    expect(deco.style.getPropertyValue('--ew-comment-author-color')).to.have.length.greaterThan(0);
+    expect(controller.showHighlights).to.equal(true);
+
+    controller.setShowHighlights(false);
+    expect(editor.view.dom.querySelector('[data-comment-thread="t1"]')).to.be.null;
   });
 
   it('applies SET_SELECTED_THREAD via meta', async () => {

@@ -1,4 +1,15 @@
 import { decodeAnchor } from '../../shared/comments/helpers/anchor.js';
+import { getInitials } from '../../shared/comments/helpers/format-utils.js';
+import { generateColor } from '../ew-editor-doc/utils/collab.js';
+
+// The thread's root author drives the highlight color + initials bubble, mirroring
+// the panel's thread cards. Falls back to a deterministic color when a legacy
+// comment predates author.color.
+export function authorPresentation(author) {
+  const user = author ?? {};
+  const color = user.color ?? generateColor(user.email || user.id || '');
+  return { color, initials: getInitials(user.name), authorName: user.name ?? '' };
+}
 
 function imageSrcAtAnchor(view, from) {
   if (!view?.state?.doc) return '';
@@ -24,12 +35,16 @@ export function commentMarkers(view, controller) {
     if (!comment) return;
     const range = decodeAnchor({ anchor: comment, state: view.state });
     if (!range) return;
+    const { color, initials, authorName } = authorPresentation(comment.author);
     const marker = {
       threadId,
       anchorType: comment.anchorType,
       from: range.from,
       to: range.to,
       anchorText: comment.anchorText ?? '',
+      color,
+      initials,
+      authorName,
     };
     if (comment.anchorType === 'image') {
       marker.imageSrc = imageSrcAtAnchor(view, range.from);
