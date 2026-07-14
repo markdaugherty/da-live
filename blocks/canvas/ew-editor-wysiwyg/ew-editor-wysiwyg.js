@@ -13,11 +13,16 @@ const QUICK_EDIT_INIT_MAX_ATTEMPTS = 25;
 
 const WYSIWYG_PORT_READY_ATTR = 'data-nx-wysiwyg-port-ready';
 
-function buildQuickEditInitPayload({ org, repo, path, branch = 'main' }) {
+function buildQuickEditInitPayload({ org, repo, path, branch = 'main', canWrite = false }) {
   const pathWithoutOrgRepo = path.split('/').slice(2).join('/');
   const pathname = pathWithoutOrgRepo ? `/${pathWithoutOrgRepo}` : '/';
   return {
-    config: { mountpoint: `${getPreviewOrigin(org, repo, branch)}/${org}/${repo}` },
+    config: {
+      mountpoint: `${getPreviewOrigin(org, repo, branch)}/${org}/${repo}`,
+      // Drives read-only in the quick-edit plugin: mini-editors are non-editable
+      // and image-drop is disabled when this is false.
+      canWrite,
+    },
     location: { pathname },
   };
 }
@@ -45,6 +50,7 @@ async function tryLoadWysiwygPreviewCookies({ org, repo, path, branch, getCurren
 export class EwEditorWysiwyg extends LitElement {
   static properties = {
     ctx: { type: Object },
+    canWrite: { type: Boolean },
     _cookieReady: { state: true },
   };
 
@@ -183,7 +189,14 @@ export class EwEditorWysiwyg extends LitElement {
     this._clearQuickEditRetry();
     this._syncCanvasVisibility();
 
-    const { config, location } = buildQuickEditInitPayload({ org, repo, path, branch: this._wysiwygBranch ?? 'main' });
+    const { config, location } = buildQuickEditInitPayload({
+      org,
+      repo,
+      path,
+      branch: this._wysiwygBranch ?? 'main',
+      // Fail-secure: only writable when the host explicitly confirmed write access.
+      canWrite: this.canWrite === true,
+    });
     const send = () => this._postQuickEditInitToIframe({
       iframe,
       config,
